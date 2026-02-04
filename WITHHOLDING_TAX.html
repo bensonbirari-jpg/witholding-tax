@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2% Withholding Tax Calculator (VAT Exclusive)</title>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#111827;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --accent:#22c55e;
+      --accent2:#38bdf8;
+      --danger:#ef4444;
+      --shadow: 0 10px 20px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.15), transparent 60%),
+                  radial-gradient(1000px 500px at -10% 120%, rgba(56,189,248,.12), transparent 60%),
+                  var(--bg);
+      color:var(--text); min-height:100dvh; display:grid; place-items:center; padding:24px;
+    }
+    .wrap{width:min(960px, 100%);}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+      padding: clamp(20px, 3vw, 32px);
+    }
+    h1{margin:0 0 8px; font-size: clamp(22px, 3.2vw, 34px);}
+    p.sub{margin:0 0 20px; color:var(--muted)}
+    .grid{display:grid; gap:16px}
+    @media(min-width:720px){
+      .grid.cols-2{grid-template-columns:1.2fr .8fr}
+    }
+    label{display:block; font-size:14px; color:var(--muted); margin-bottom:6px}
+    input[type="number"], select{
+      width:100%; padding:14px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12);
+      background:#0b1220; color:var(--text); outline:none; font-size:16px;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px;
+      background:#0b1220; border:1px solid rgba(255,255,255,.12); color:var(--text); cursor:pointer;
+    }
+    .pill input{accent-color:var(--accent)}
+    .btn{
+      appearance:none; border:0; background:linear-gradient(180deg, var(--accent), #16a34a);
+      color:white; padding:14px 18px; border-radius:999px; font-weight:600; letter-spacing:.2px;
+      box-shadow: 0 6px 16px rgba(34,197,94,.35), 0 2px 0 rgba(0,0,0,.2) inset; cursor:pointer;
+      transition: transform .06s ease;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn.secondary{ background:#0b1220; border:1px solid rgba(255,255,255,.12); box-shadow: var(--shadow); }
+    .out{ display:grid; gap:10px; }
+    .stat{
+      display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
+      background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:12px;
+    }
+    .stat.highlight{
+      border-color: rgba(34,197,94,.3);
+      background: linear-gradient(90deg, rgba(34,197,94,.08), transparent);
+    }
+    .stat.vat{
+      border-color: rgba(56,189,248,.25);
+      background: linear-gradient(90deg, rgba(56,189,248,.06), transparent);
+    }
+    .stat .label{color:var(--muted); font-size:14px}
+    .stat .value{font-size: clamp(17px, 2.2vw, 20px); font-weight:700}
+    .stat .value.green{color:var(--accent)}
+    .stat .value.blue{color:var(--accent2)}
+    .divider{
+      height:1px; background: rgba(255,255,255,.08); margin: 4px 0;
+    }
+    .err{ color:var(--danger); font-size:14px; display:none }
+    .note{
+      margin-top:16px; padding:14px 16px; border-radius:12px;
+      background: rgba(56,189,248,.08); border:1px solid rgba(56,189,248,.2);
+      font-size:13px; color:var(--muted); line-height:1.5;
+    }
+    .note strong{color:var(--text)}
+    footer{margin-top:14px; color:var(--muted); font-size:12px; text-align:center}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card grid cols-2">
+      <div>
+        <h1>2% Withholding Tax Calculator</h1>
+        <p class="sub">Calculates WHT on the <strong>VAT-exclusive</strong> amount. Enter an invoice total (VAT inclusive) and see the breakdown.</p>
+
+        <div class="grid" style="margin-top:16px">
+          <div>
+            <label for="amount">Invoice Amount (VAT Inclusive)</label>
+            <input id="amount" type="number" min="0" step="0.01" placeholder="e.g. 116000" />
+          </div>
+
+          <div class="row" aria-label="calculation mode" style="margin-top:8px">
+            <label class="pill"><input type="radio" name="mode" value="gross" checked /> Amount is <strong>Gross</strong> (VAT inclusive)</label>
+            <label class="pill"><input type="radio" name="mode" value="net" /> Amount is <strong>Net</strong> (supplier expects after WHT)</label>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <div style="flex:1; min-width:120px">
+              <label for="vatRate">VAT Rate (%)</label>
+              <input id="vatRate" type="number" value="16" min="0" max="100" step="0.01" />
+            </div>
+            <div style="flex:1; min-width:120px">
+              <label for="whtRate">WHT Rate (%)</label>
+              <input id="whtRate" type="number" value="2" min="0" max="100" step="0.01" />
+            </div>
+            <div style="width:120px">
+              <label for="currency">Currency</label>
+              <select id="currency">
+                <option value="KES" selected>KES</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="calcBtn" title="Calculate">Calculate</button>
+            <button class="btn secondary" id="resetBtn" title="Reset">Reset</button>
+            <span id="error" class="err">Enter a valid number greater than or equal to 0.</span>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>How it works:</strong> In Kenya, the 2% Withholding Tax is calculated on the VAT-exclusive amount. 
+          This calculator first removes the 16% VAT, then calculates WHT on the base amount.
+        </div>
+
+        <footer>Tip: Use Net mode when your supplier told you the exact amount they expect to receive after WHT deduction.</footer>
+      </div>
+
+      <div class="out" aria-live="polite" aria-atomic="true">
+        <div class="stat">
+          <span class="label">Gross Amount (VAT Inclusive)</span>
+          <span class="value" id="gross">KES 0.00</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat vat">
+          <span class="label">VAT-Exclusive Amount</span>
+          <span class="value blue" id="vatExclusive">KES 0.00</span>
+        </div>
+        <div class="stat vat">
+          <span class="label">VAT Amount (16%)</span>
+          <span class="value blue" id="vatAmount">KES 0.00</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat highlight">
+          <span class="label">Withholding Tax (2% of VAT-exclusive)</span>
+          <span class="value green" id="wht">KES 0.00</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat highlight">
+          <span class="label">Net Payable to Supplier</span>
+          <span class="value green" id="net">KES 0.00</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const amountEl = document.getElementById('amount');
+    const modeEls = document.querySelectorAll('input[name="mode"]');
+    const vatRateEl = document.getElementById('vatRate');
+    const whtRateEl = document.getElementById('whtRate');
+    const currencyEl = document.getElementById('currency');
+    const grossEl = document.getElementById('gross');
+    const vatExclusiveEl = document.getElementById('vatExclusive');
+    const vatAmountEl = document.getElementById('vatAmount');
+    const whtEl = document.getElementById('wht');
+    const netEl = document.getElementById('net');
+    const errorEl = document.getElementById('error');
+    const calcBtn = document.getElementById('calcBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function fmtCurrency(val){
+      const code = currencyEl.value || 'KES';
+      try{
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency: code, maximumFractionDigits: 2 }).format(val || 0);
+      }catch(e){
+        return (code + ' ' + (val || 0).toFixed(2));
+      }
+    }
+
+    function getMode(){
+      return [...modeEls].find(m => m.checked)?.value || 'gross';
+    }
+
+    function getVatRate(){
+      const r = parseFloat(vatRateEl.value);
+      return isFinite(r) && r >= 0 ? r/100 : 0.16;
+    }
+
+    function getWhtRate(){
+      const r = parseFloat(whtRateEl.value);
+      return isFinite(r) && r >= 0 ? r/100 : 0.02;
+    }
+
+    function calculate(){
+      const amt = parseFloat(amountEl.value);
+      const mode = getMode();
+      const vatRate = getVatRate();
+      const whtRate = getWhtRate();
+
+      if(!isFinite(amt) || amt < 0){
+        errorEl.style.display = 'inline';
+        render(0, 0, 0, 0, 0);
+        return;
+      } else {
+        errorEl.style.display = 'none';
+      }
+
+      let gross = 0, vatExclusive = 0, vatAmount = 0, wht = 0, net = 0;
+
+      if(mode === 'gross'){
+        // Amount entered is the VAT-inclusive gross
+        gross = amt;
+        vatExclusive = gross / (1 + vatRate);
+        vatAmount = gross - vatExclusive;
+        wht = vatExclusive * whtRate;
+        net = gross - wht;
+      } else {
+        // Amount entered is what supplier expects to receive (net after WHT)
+        // net = gross - wht
+        // net = gross - (vatExclusive * whtRate)
+        // net = gross - (gross / (1 + vatRate)) * whtRate
+        // net = gross * (1 - whtRate / (1 + vatRate))
+        // gross = net / (1 - whtRate / (1 + vatRate))
+        net = amt;
+        const factor = 1 - (whtRate / (1 + vatRate));
+        gross = net / factor;
+        vatExclusive = gross / (1 + vatRate);
+        vatAmount = gross - vatExclusive;
+        wht = vatExclusive * whtRate;
+      }
+
+      render(gross, vatExclusive, vatAmount, wht, net);
+    }
+
+    function render(gross, vatExclusive, vatAmount, wht, net){
+      grossEl.textContent = fmtCurrency(gross);
+      vatExclusiveEl.textContent = fmtCurrency(vatExclusive);
+      vatAmountEl.textContent = fmtCurrency(vatAmount);
+      whtEl.textContent = fmtCurrency(wht);
+      netEl.textContent = fmtCurrency(net);
+      
+      // Update VAT label
+      const vatLabel = document.querySelector('.stat.vat:nth-child(4) .label');
+      if(vatLabel) vatLabel.textContent = `VAT Amount (${(getVatRate()*100).toFixed(0)}%)`;
+      
+      // Update WHT label
+      const whtLabel = document.querySelector('.stat.highlight:nth-child(6) .label');
+      if(whtLabel) whtLabel.textContent = `Withholding Tax (${(getWhtRate()*100).toFixed(0)}% of VAT-exclusive)`;
+    }
+
+    // Events
+    calcBtn.addEventListener('click', calculate);
+    resetBtn.addEventListener('click', () => {
+      amountEl.value = '';
+      vatRateEl.value = '16';
+      whtRateEl.value = '2';
+      document.querySelector('input[name="mode"][value="gross"]').checked = true;
+      render(0, 0, 0, 0, 0);
+      errorEl.style.display = 'none';
+    });
+    amountEl.addEventListener('input', calculate);
+    currencyEl.addEventListener('change', calculate);
+    vatRateEl.addEventListener('input', calculate);
+    whtRateEl.addEventListener('input', calculate);
+    modeEls.forEach(m => m.addEventListener('change', calculate));
+
+    // First paint
+    render(0, 0, 0, 0, 0);
+  </script>
+</body>
+</html>
